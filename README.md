@@ -1,22 +1,7 @@
-# FORGE — artefact for anonymous review
+# FORGE, artefact for anonymous review
 
-Reference implementation and paper source for *FORGE: Federated Continual
-Unlearning with Formal Guarantees*, submitted to PoPETs 2027.
-
-## Layout
-
-```
-.
-├── paper/      LaTeX source for the paper (self-contained, builds to a 17-page PDF).
-└── code/       Reference implementation of FORGE + baselines + evaluation pipeline.
-```
-
-## Reproducing the paper PDF
-
-```bash
-cd paper
-pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
-```
+Reference implementation for *FORGE: Federated Continual Unlearning with
+Formal Guarantees*, submitted to PoPETs 2027.
 
 ## Reproducing the experiments
 
@@ -38,4 +23,4 @@ resume via `resume.pt`.
 
 This bundle contains no author identifiers, institutional affiliations, or
 credentials. Previous run outputs (`runs/`), downloaded datasets (`data/`), and
-version-control history (`.git/`) have been stripped.
+version-control history have been stripped.
