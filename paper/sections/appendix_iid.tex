@@ -1,0 +1,35 @@
+\section{Near-IID CIFAR-10 benchmark}
+\label{app:iid-table}
+
+Table~\ref{tab:iid-benchmark} is the full benchmark referenced by
+Section~\ref{sec:results-iid}: the twelve-method CIFAR-10 run at Dirichlet
+concentration $10$ (approximately IID), seed~$0$ only, with all other
+hyperparameters identical to the main-text operating point.
+
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrl}
+\toprule
+Method & Acc & Yeom & KL & Lat.\,(s) & Guar. \\
+\midrule
+Retrain (gold)   & $0.187$ & $0.023$ & $0.000$ & $\sim 2200$ & exact \\
+No-unlearn       & $0.188$ & $0.036$ & $0.099$ & $0$        & none  \\
+\textbf{FORGE}   & $\mathbf{0.188}$ & $\mathbf{0.056}$ & $\mathbf{0.099}$ & $\mathbf{0.28}$ & $\eps{=}2.0$ \\
+\midrule
+Halimi \cite{halimi2022}              & $0.189$ & $0.061$ & $0.142$ & $7.7$ & none \\
+FedMemPrune \cite{wei2026fedmemprune} & $0.100$ & $0.043$ & $5.55$  & $1.3$ & none \\
+FedRec$^{\dag}_{\eps{=}1}$            & $0.094$ & $0.000$ & \textsc{NaN} & $15.1$ & $\eps{=}1.0$ \\
+FedRec$^{\dag}_{\eps{=}2}$            & $0.101$ & $0.000$ & \textsc{NaN} & $15.5$ & $\eps{=}2.0$ \\
+FedRec$^{\dag}_{\eps{=}5}$            & $0.100$ & $0.018$ & $10.10$      & $15.9$ & $\eps{=}5.0$ \\
+FedRec$^{\dag}_{\eps{=}10}$           & $0.108$ & $0.000$ & \textsc{NaN} & $16.0$ & $\eps{=}10.0$ \\
+FedRec$_{\eps{=}\infty}$              & $0.185$ & $0.053$ & $0.135$ & $16.7$ & $\infty$ \\
+FedEraser \cite{liu2021federaser}     & $0.128$ & $0.036$ & $1.230$ & $28.1$ & none \\
+SIFU \cite{fraboni2024sifu}           & $0.188$ & $0.046$ & $0.132$ & $2192$ & $\eps{=}1.0$ \\
+\bottomrule
+\end{tabular}
+\caption{Near-IID (Dir($10$)) proxy at seed~$0$, departing client~$3$. $\dag$:
+destroyed-model FedRecovery variants.}
+\label{tab:iid-benchmark}
+\end{table}

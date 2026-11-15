@@ -1,0 +1,204 @@
+\section{System model and problem formulation}
+\label{sec:prelim}
+
+\paragraph{System model.}
+Let $\clientset = \{1, \dots, N\}$ denote the client set, and let each client $i \in
+\clientset$ hold a local data stream $D_i = (D_i^{(1)}, D_i^{(2)}, \dots)$, where
+$D_i^{(t)}$ is the data available to client $i$ at round $t$. At each round $t$ of an
+FCL protocol, the server broadcasts a global model $\model^{(t)}$; a subset $S^{(t)}
+\subseteq \clientset$ of clients trains locally on $D_i^{(t)}$ and returns an update
+$\Delta_i^{(t)}$; the server aggregates $\{\Delta_i^{(t)}\}_{i \in S^{(t)}}$ to produce
+$\model^{(t+1)}$. We denote the aggregation operator $\mathcal{A}$ and the full training
+trajectory as $\Theta_{r} = (\model^{(0)}, \dots, \model^{(r)})$. An \emph{erasure
+request} is a tuple $(\forget, r_{\forget}, r_{\mathrm{req}})$: client $\forget \in
+\clientset$ participated up to round $r_{\forget}$ and issues the request at round
+$r_{\mathrm{req}} \geq r_{\forget}$. We denote by $\Theta_{-\forget, r}$ the
+counterfactual training trajectory in which client $\forget$ never participated, i.e., a
+full retrain from scratch without their data. The gold standard is to produce a model
+$\model^{(r)}$ distributed indistinguishably from $\model_{-\forget}^{(r)}$. For the
+sake of readability, an overview of the notations used throughout this paper is provided
+in Table~\ref{tab:notations}.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\clientset,\, N$              & Client set and its size \\
+$D_i^{(t)}$                    & Local data of client $i$ at round $t$ \\
+$S^{(t)}$                      & Clients sampled at round $t$ \\
+$\model^{(t)} \!=\! (\theta_\mathrm{sh}, \theta_\mathrm{cl})$ & Global model: features / head \\
+$\Delta_i^{(t)}$               & Local update of client $i$ at round $t$ \\
+$\mathcal{A}$                  & Server aggregation operator \\
+$\Theta_r$                     & Training trajectory up to round $r$ \\
+$\forget$                      & Departing client's index \\
+$r_\forget,\, r_\mathrm{req}$  & Departure / request rounds \\
+$T$                            & Cooling-off period $r_\mathrm{req} - r_\forget$ \\
+$\Theta_{-\forget, r}$         & Counterfactual trajectory w/o $\forget$ \\
+$C,\, \alpha,\, \sigma$        & Clip norm, decay, server noise \\
+$\sigma_i$                     & Pre-committed DP summary of client $i$ \\
+$(\eps_\summary, \delta_\summary)$ & Per-summary DP budget \\
+$\mu_1(T)$                     & GDP parameter of feature-block release \\
+$\mu_\summary$                 & GDP parameter of head-subtraction release \\
+$\mu_\mathrm{joint}(T)$        & GDP parameter of composed joint release \\
+$(\eps_\mathrm{total}, \delta_\mathrm{total})$ & Overall formal guarantee \\
+$\gamma,\, R$                  & Ascent step / projection radius \\
+$\rho$                         & Client participation rate \\
+$M(X) \indist M(X')$           & $(\eps, \delta)$-indistinguishability \\
+\bottomrule
+\end{tabular}
+\caption{Notation.}
+\label{tab:notations}
+\end{table}
+
+\paragraph{Differential privacy.}
+A randomised mechanism $M: \mathcal{X} \to \mathcal{Y}$ is $(\varepsilon,
+\delta)$-differentially private if, for all neighbouring datasets $X, X'$ differing in a
+single record (or, at client level, a single client), and all measurable $Y \subseteq
+\mathcal{Y}$,
+\begin{equation}
+\Prob[M(X) \in Y] \leq e^{\varepsilon} \Prob[M(X') \in Y] + \delta.
+\label{eq:dp}
+\end{equation}
+We write $M(X) \indist M(X')$ when \eqref{eq:dp} holds. Differential Privacy (DP) is
+closed under post-processing: for any (possibly randomised) $f$, $f \circ M$ is also
+$(\varepsilon, \delta)$-DP.
+
+\paragraph{Threat model.}
+We assume an honest-but-curious server that follows the protocol but may attempt to
+infer private information from received messages. This is stronger than the
+malicious-server assumption of some FU work but matches the deployed setting for most FL
+systems. An external adversary observes any released model artefact (before or after
+erasure) and may query it as a black box. This adversary implements MIA
+\cite{shokri2017mia,carlini2022lira} and FUIA \cite{fuia2025}. Clients are
+semi-honest: they follow the training protocol but may attempt to influence the erasure
+procedure adversarially (e.g., contribute a backdoor before requesting erasure).
+Compromised transmissions are out of scope; we assume standard secure aggregation and
+TLS between clients and server. The controller must be able to produce evidence,
+examinable by a supervisory authority, that after erasure the model is $(\varepsilon,
+\delta)$-indistinguishable from a counterfactual retrain, without publishing a
+pre-erasure model to any party. The supervisory authority is modelled as a semi-honest
+protocol participant, not an external third party: it receives read access to the
+pre-erasure head weights under a non-disclosure obligation in order to recompute the
+head delta during verification (Section~\ref{sec:method-erasure}). The Chen et al.\
+unlearning-leakage channel \cite{chen2021unlearningleaks} is therefore closed with
+respect to parties outside the controller–authority pair, which includes the
+departing client, the remaining clients, and any external observer.
+
+The scope of the formal guarantee is restricted to the departing client. Specifically,
+FORGE provides a client-level $(\varepsilon, \delta)$-indistinguishability bound against
+the counterfactual trajectory in which client $\forget$ never participated. Privacy for
+non-departing clients inherits from the underlying FL protocol (secure aggregation, and
+DP-FedAvg \cite{mcmahan2018learning} if deployed in combination). The composition
+theorem (Theorem~\ref{thm:composition}) does not extend non-departing-client bounds
+beyond the base-protocol level. This matches the scope of all prior FU work that we
+compare against.
+
+An adversarial departing client that recorded their per-round received broadcasts can,
+by assumption, reconstruct a pre-erasure global model at the round of their departure.
+In such a scenario, the Chen-et-al channel \cite{chen2021unlearningleaks} is closed on
+the server side as follows: the erasure certificate issued at the end of
+Algorithm~\ref{alg:erasure} comprises a hash of the pre-committed summary and a
+proof-of-execution transcript (defined in Section~\ref{sec:method-erasure}), neither of
+which exposes the post-erasure model. The departing client may therefore verify that
+an erasure took place without observing the post-erasure model artefact, and no third
+party receives a before/after pair.
+
+\paragraph{Forward forgetting.}
+We now introduce the central definition of this paper.
+
+\begin{definition}[$(\varepsilon, \delta, T)$-forward forgetting]
+\label{def:forward-forgetting}
+An FCL protocol satisfies \emph{$(\varepsilon, \delta, T)$-forward forgetting} for
+client $\forget$ if, for any erasure request $(\forget, r_{\forget}, r_{\mathrm{req}})$
+with $r_{\mathrm{req}} \geq r_{\forget} + T$, the released model
+$\model^{(r_{\mathrm{req}})}$ satisfies
+\begin{equation}
+\model^{(r_{\mathrm{req}})} \indist \model_{-\forget}^{(r_{\mathrm{req}})}.
+\end{equation}
+The protocol satisfies \emph{$(\varepsilon(T), \delta(T))$-forward forgetting} if the
+guarantee holds for all $T \geq 0$ with rate functions $\varepsilon(T), \delta(T)$.
+\end{definition}
+
+Forward forgetting differs from standard DP in three ways. First, the reference
+distribution is the counterfactual retrain trajectory, not a database-neighbours pair.
+Second, the guarantee is \emph{time-indexed}: the $\varepsilon$ is a function of how
+long the client has been absent, not a single number set at training. Third, the
+guarantee is written in a one-sided form, i.e., it bounds the distance from the
+released model to the counterfactual.
+
+\begin{remark}[Equivalence to two-sided DP under symmetric sampling]
+\label{rem:two-sided}
+Under exchangeable client sampling $S^{(t)}$ and i.i.d.\ local-training randomness
+(Assumption~\ref{ass:noise}), the forward and reverse directions
+$(\model^{(r_\mathrm{req})}, \model_{-\forget}^{(r_\mathrm{req})})$ are equidistributed
+with respect to swapping client $\forget$ with any other sampled client. The one-sided
+bound of Definition~\ref{def:forward-forgetting} is therefore equivalent to the standard
+two-sided $(\varepsilon, \delta)$-DP neighbouring-datasets condition up to a factor of
+at most $2$ in $\delta$, by the group-privacy argument of \cite{dwork2014book}, Section
+2.3.
+\end{remark}
+
+\begin{remark}
+Definition~\ref{def:forward-forgetting} does not require the erasure request to trigger
+any procedure at all. If the protocol's forward-forgetting rate $\varepsilon(T)$ is
+small enough at $T = r_{\mathrm{req}} - r_{\forget}$, the released model already
+satisfies the required indistinguishability. In practice we combine decay-based forward
+forgetting (which handles the shared-signal component and covers the bulk of the
+guarantee for $T \geq T^{\star}$) with an active subtraction step (which covers the
+memorised residual regardless of $T$).
+\end{remark}
+
+\paragraph{Assumptions.}
+We make the following standard assumptions.
+
+\begin{assumption}[Bounded update norm]
+\label{ass:clipping}
+Each client update satisfies $\|\Delta_i^{(t)}\| \leq C$ for a clipping constant $C > 0$.
+This is enforced by clipping at the client.
+\end{assumption}
+
+\begin{assumption}[Lipschitz loss]
+\label{ass:lipschitz}
+The local loss $\ell(\model; x)$ is $L$-Lipschitz in $\model$ for all $x$.
+\end{assumption}
+
+\begin{assumption}[Bounded participation]
+\label{ass:participation}
+Each client participates in at most $K$ rounds out of any window of $T$ consecutive
+rounds, with $K/T \leq \rho$ for a participation rate $\rho \in (0, 1)$.
+\end{assumption}
+
+\begin{assumption}[Sub-Gaussian gradient noise]
+\label{ass:noise}
+Local minibatch gradient noise is sub-Gaussian with parameter $\eta^2$.
+\end{assumption}
+
+Assumptions~\ref{ass:clipping}--\ref{ass:noise} are standard for federated DP analysis
+\cite{mcmahan2018learning,abadi2016dpsgd}. Assumption~\ref{ass:participation} bounds the
+frequency with which any single client can inject signal, and directly controls the
+decay rate.
+
+\paragraph{Problem statement.}
+Given the FCL setup above, we aim to design a protocol satisfying the following four
+properties.
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+\item[\textbf{P1.}] \emph{Forward forgetting}: $(\varepsilon(T), \delta(T))$-forward
+forgetting for every client, with $\varepsilon(T) \to 0$ as $T \to \infty$.
+\item[\textbf{P2.}] \emph{No history storage}: the server retains no per-round client
+updates. Only the current model $\model^{(t)}$, aggregated statistics, and a hash of
+each client's pre-committed summary may persist across rounds.
+\item[\textbf{P3.}] \emph{No client cooperation at request time}: the erasure procedure
+at round $r_{\mathrm{req}}$ does not require any communication with client $\forget$
+beyond receiving the request itself.
+\item[\textbf{P4.}] \emph{Bounded utility cost}: expected test accuracy of the final
+released model degrades by at most $\Delta_{\mathrm{util}}$ compared to a non-private
+FedAvg baseline, for a specified budget $\Delta_{\mathrm{util}}$.
+\end{itemize}
+
+We show in the remainder of the paper that no prior FU method satisfies P1--P3
+simultaneously with a non-trivial $\Delta_{\mathrm{util}}$, and we present a protocol
+that does.

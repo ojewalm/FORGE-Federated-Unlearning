@@ -1,0 +1,79 @@
+# Real-scale CIFAR-100 config for the first end-to-end benchmark on M4 (MPS).
+# Wall-clock estimate: ~40 min per training × 3 trainings ≈ 2 h total.
+# Interruptable: kill any script and re-run the same command to resume.
+experiment:
+  name: cifar100_real
+  seed: 0
+  device: auto
+  data_root: ./data
+
+dataset:
+  name: cifar100
+  num_clients: 100
+  num_tasks: 5              # 5 tasks × 40 rounds = 200 rounds
+  dirichlet_alpha: 0.5
+
+model:
+  name: resnet18
+  in_channels: 3
+  small_input: true         # 3x3 stem for 32x32 inputs
+
+federated:
+  total_rounds: 200
+  rounds_per_task: 40
+  client_sample_frac: 0.10
+  local_epochs: 1
+  batch_size: 32
+  lr: 0.01
+  clip_norm: 1.0
+
+aggregator:
+  alpha: 0.9
+  server_lr: 1.0
+  # sigma is per-parameter noise stdev. For 11M-param ResNet-18, noise L2
+  # scales as sigma * sqrt(11M) ≈ 3350*sigma; keep sigma small enough that
+  # noise doesn't drown a clip_norm=1.0 signal. The forward-forgetting rate
+  # eps_1(T) is dominated by alpha^T anyway (decay does most of the work).
+  server_sigma: 0.001
+
+summary:
+  enabled: true
+  type: moments
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.10
+    delta_1: 1.0e-5
+
+baselines:
+  halimi_ascent_steps: 50
+  halimi_ascent_lr: 0.005
+  halimi_radius: 3.0
+  fedmemprune_quantile: 0.95
+  fedmemprune_reset_scale: 0.0
+  fedmemprune_include_head: true
+  fedrecovery_weighting: linear
+  fedrecovery_eta: 1.0
+  fedrecovery_eps: 1.0
+  fedrecovery_delta: 1.0e-5
+  federaser_lr_calib: 0.5
+  sifu_target_eps: 1.0
+  participation_rho: 0.10
+  # History storage stride for the shared FedAvg base (used by FedRecovery,
+  # FedEraser, SIFU). stride=5 stores every 5th round → ~40 entries over
+  # 200 rounds → ~18 GB on disk for ResNet-18 × 10 clients. Increase to
+  # stride=10 (9 GB) if disk is tight; decrease to 1 for finest resolution.
+  history_stride: 5
+
+evaluation:
+  evaluate_every: 10        # eval + numbered checkpoint every 10 rounds
+  checkpoint_every: 1       # resume.pt every round (cheap; ~11MB ResNet-18)
+
+output:
+  checkpoint_dir: ./runs/cifar100_real

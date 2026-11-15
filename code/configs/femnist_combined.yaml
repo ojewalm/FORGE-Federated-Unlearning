@@ -1,0 +1,48 @@
+experiment:
+  name: femnist_combined
+  seed: 0
+  device: cuda
+  data_root: ./data
+
+dataset:
+  name: femnist
+  num_clients: 500                  # subsample writers for tractability
+
+model:
+  name: small_cnn
+  in_channels: 1
+
+federated:
+  total_rounds: 300
+  rounds_per_task: 50
+  client_sample_frac: 0.02
+  local_epochs: 1
+  batch_size: 20
+  lr: 0.004
+  clip_norm: 1.0
+
+aggregator:
+  alpha: 0.9
+  server_lr: 1.0
+  server_sigma: 0.3
+
+summary:
+  enabled: true
+  type: moments
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.02
+    delta_1: 1.0e-5
+
+evaluation:
+  evaluate_every: 25
+
+output:
+  checkpoint_dir: ./runs/femnist_combined

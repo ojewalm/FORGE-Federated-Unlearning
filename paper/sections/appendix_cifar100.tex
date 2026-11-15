@@ -1,0 +1,37 @@
+\section{Split-CIFAR-100 benchmark}
+\label{app:cifar100-table}
+
+Table~\ref{tab:cifar100-benchmark} is the full benchmark referenced by
+Section~\ref{sec:results-cifar100}: the twelve-method CIFAR-100 run at seed~$0$,
+with the same hyperparameters as the main CIFAR-10 setup except for the number of
+classes, tasks, and rounds.
+
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrl}
+\toprule
+Method & Acc & Yeom & KL & Lat.\,(s) & Guar. \\
+\midrule
+Retrain (gold) & $0.050$ & $0.027$ & $0.000$ & $\sim 7500$ & exact \\
+No-unlearn     & $0.044$ & $0.033$ & $0.311$ & $0$         & none \\
+\textbf{FORGE} ($\gamma{=}0.032$) & $\mathbf{0.043}$ & $\mathbf{0.017}$ & $\mathbf{0.333}$ & $\mathbf{0.77}$ & $\eps{=}2.0$ \\
+FORGE ($\gamma{=}0.1$)            & $0.041$ & $0.019$ & $0.403$ & $0.54$ & $\eps{=}2.0$ \\
+\midrule
+Halimi \cite{halimi2022}              & $0.044$ & $0.050$ & $0.405$ & $13.6$ & none \\
+FedMemPrune \cite{wei2026fedmemprune} & $0.008$ & $0.081$ & $4.91$  & $2.8$  & none \\
+FedRec$^{\dag}_{\eps{=}1}$            & $0.010$ & $0.017$ & $9.32$  & $25.0$ & $\eps{=}1.0$ \\
+FedRec$^{\dag}_{\eps{=}2}$            & $0.009$ & $0.000$ & \textsc{NaN} & $26.7$ & $\eps{=}2.0$ \\
+FedRec$^{\dag}_{\eps{=}5}$            & $0.010$ & $0.044$ & $10.42$ & $20.5$ & $\eps{=}5.0$ \\
+FedRec$^{\dag}_{\eps{=}10}$           & $0.011$ & $0.000$ & \textsc{NaN} & $23.5$ & $\eps{=}10.0$ \\
+FedRec$_{\eps{=}\infty}$              & $0.052$ & $0.023$ & $0.244$ & $26.8$ & $\infty$ \\
+FedEraser \cite{liu2021federaser}     & $0.010$ & $0.004$ & $5.55$  & $38.9$ & none \\
+SIFU \cite{fraboni2024sifu}           & $0.050$ & $0.095$ & $0.269$ & $2176$ & $\eps{=}1.0$ \\
+\bottomrule
+\end{tabular}
+\caption{Split-CIFAR-100 benchmark (seed~$0$, departing client~$3$, 500 rounds).
+$\dag$: destroyed-model FedRecovery variants. Chance accuracy at 100 classes is
+$0.010$.}
+\label{tab:cifar100-benchmark}
+\end{table}

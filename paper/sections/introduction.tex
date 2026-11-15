@@ -1,0 +1,141 @@
+\section{Introduction}
+\label{sec:introduction}
+
+\paragraph{Real-world privacy relevance.}
+This paper addresses the right-to-erasure obligation of GDPR Article~17 as applied to
+federated models under EDPB Opinion 28/2024 on AI systems \cite{edpb2024}, which
+requires data controllers to evidence that a departing client's residual influence on
+any downstream model is negligible. In cross-institutional and cross-device federated
+learning deployments (medical, financial, keyboard, smart-home), this obligation is
+operationally difficult: the server cannot observe raw client data by design, and
+retraining from scratch is prohibitive. The protocol proposed here, FORGE, provides
+a formal $(\varepsilon, \delta)$-indistinguishability guarantee that a supervisory
+authority can verify without the controller publishing a pre-erasure model, and
+without requiring the departing client to remain online. The guarantee, the
+verification protocol (Section~\ref{sec:method-erasure}), and the cross-release
+composition analysis (Section~\ref{sec:theory}) are the components that make the
+protocol deployable as a compliance mechanism for live FL systems rather than as a
+theoretical construction.
+
+The right to erasure obliges a data controller to remove personal data on request and,
+under recent guidance, to evidence that residual influence on any downstream model is
+negligible \cite{edpb2024}. In Federated Learning (FL), and especially in Federated
+Continual Learning (FCL), operationalising this obligation is complicated by the very
+properties that make FL privacy-preserving in the first place. Secure aggregation
+prevents the server from observing individual client updates \cite{bonawitz2017};
+asynchronous or streaming continual learning spreads a client's influence across weights,
+aggregated statistics, replay buffers, and distilled knowledge \cite{yoon2021}; and
+empirical work has shown that secure aggregation is not, on its own, sufficient
+protection against membership inference \cite{pillutla2023}. Any credible Federated
+Unlearning (FU) procedure must therefore not merely alter the model, but do so in a way
+that a supervisory authority, as well as the departing client themselves, can verify
+without introducing new avenues of leakage.
+
+Existing FU methods trade among three costs, and no prior work eliminates all three
+simultaneously. First, \emph{history-based} methods reconstruct or calibrate a model
+without the departing client using stored per-round updates or gradients
+\cite{liu2021federaser,fraboni2024sifu,zhang2023fedrecovery}. This gives the tightest
+fidelity to a retrained model, but the storage itself is at odds with secure aggregation
+and, under EDPB Opinion 28/2024, may not qualify as anonymous processing. In
+cross-device deployments with millions of clients, it is also often infeasible. Second,
+\emph{interactive} methods avoid storage by having the departing client re-engage with
+the server: gradient ascent on their local data with a distance constraint from the
+global model \cite{halimi2022}. This is elegant but assumes the client's continued
+participation, which is an assumption that fails precisely when the client is exercising
+a right to leave. Third, \emph{heuristic} methods (weight negation, pruning,
+random-label perturbation) sidestep both storage and cooperation but offer no formal
+guarantee a controller can evidence \cite{khalil2025not,gu2024fedau}. Recent
+memorisation-scoped approaches \cite{wei2026fedmemprune} give strong empirical fidelity
+but do not currently ship with a provable indistinguishability bound.
+
+A separate, less-recognised failure mode is that the unlearning procedure itself leaks.
+Publishing (or letting a client observe) a before/after model pair enables membership
+inference attacks (MIA) that outperform attacks on the original model
+\cite{chen2021unlearningleaks}, and dedicated federated attacks such as the Federated
+Unlearning Inversion Attack (FUIA) exploit exactly this signal \cite{fuia2025}. Any
+method that requires a comparable ``after'' model to be released must be evaluated
+against this channel.
+
+In this paper, we propose FORGE (\textbf{For}ward-forgetting via decayed aggregation and
+pre-committed erasure summaries), an FCL protocol under which the erasure guarantee is a
+property of the training dynamics, rather than a procedure invoked at request time. The
+protocol has two ingredients. (1)~\emph{Bounded-influence decay.} We formalise a
+training-time property called $(\varepsilon, \delta, T)$-forward forgetting: a client
+that departs at round $r$ is $(\varepsilon, \delta)$-indistinguishable from a
+counterfactual training run that never included them, by round $r + T$. Under a decayed
+aggregation protocol with per-round clipping constant $C$ and calibrated server noise
+$\sigma$, we exhibit an explicit rate $\varepsilon_1(T)$. This is the FL-native analogue
+of the DP-as-unlearning line \cite{guo2020certified,sekhari2021remember,neel2021descent},
+but time-indexed rather than budgeted once-for-all. (2)~\emph{Pre-committed differentially
+private (DP) summary channel.} During training, each client submits alongside their
+gradient a small DP summary $\sigma_i$ of their local data distribution. At erasure time,
+the server uses $\sigma_{\forget}$ to perform a non-interactive subtraction of the
+client's memorised residual, at additional cost $\varepsilon_2$. No per-round updates
+are stored, and no interaction with the client is required at or after the request.
+Because the feature-block aggregation and the summary channel use independent Gaussian
+noise sources, and because the summary-subtraction step at erasure time operates only
+on the head, adaptive Gaussian-DP composition applies and gives a
+$\sqrt{\mu_1(T)^2 + \mu_\summary^2}$-GDP joint release as the overall formal guarantee.
+
+\paragraph{Contributions.}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item A new privacy definition: $(\varepsilon, \delta, T)$-forward forgetting, the first
+per-client, time-indexed unlearning guarantee for federated (continual) learning
+(Def.~\ref{def:forward-forgetting}).
+\item A decayed aggregation FCL protocol with per-round clipping and calibrated server
+noise that achieves forward forgetting at an explicit rate
+(Alg.~\ref{alg:decayed-aggregation}).
+\item A pre-committed DP summary construction that enables non-interactive server-side
+subtraction of a departed client's memorised residual, with no per-round update storage
+and no request-time client cooperation (Alg.~\ref{alg:erasure}).
+\item A composition theorem (Thm.~\ref{thm:composition}) that yields a
+$\sqrt{\mu_1(T)^2 + \mu_\summary^2}$-GDP guarantee by adaptive Gaussian-DP
+composition, enabled by the independent Gaussian noise sources of the feature-block
+and summary mechanisms in Algorithm~\ref{alg:decayed-aggregation}.
+\item An empirical evaluation whose primary benchmark is CIFAR-10 non-IID
+stationary FL (ResNet-18, 100 clients, 200 rounds, Dirichlet $\alpha{=}0.3$, three
+seeds) at realistic deployment utility, with a class-incremental stress test
+comparing FORGE against eleven baselines including an $\varepsilon$-sweep of
+FedRecovery across $\varepsilon \in \{1, 2, 5, 10, \infty\}$, plus cross-dataset
+confirmation on Split-CIFAR-100 and FEMNIST. We evaluate with Yeom and
+shared-shadow Likelihood Ratio Attack (LiRA) membership-inference attacks as well
+as the FUIA gradient-inversion attack; the full benchmark is reproducible from a
+single command on consumer M-series hardware.
+\end{enumerate}
+
+Table~\ref{tab:positioning} summarises how FORGE maps onto the three FU pain points
+relative to representative prior work. To the best of our knowledge, FORGE is the first
+FU protocol to resolve all three simultaneously.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Method & No hist. & No coop. & Formal guar. \\
+\midrule
+Retrain from scratch & \checkmark & \checkmark & exact \\
+FedEraser \cite{liu2021federaser} & $\times$ & \checkmark & $\times$ \\
+SIFU \cite{fraboni2024sifu} & $\times$ & \checkmark & \checkmark \\
+FedRecovery \cite{zhang2023fedrecovery} & $\times$ & \checkmark & \checkmark (DP) \\
+Halimi et al.\ \cite{halimi2022} & \checkmark & $\times$ & $\times$ \\
+FedMemPrune \cite{wei2026fedmemprune} & \checkmark & \checkmark & $\times$ \\
+\textbf{FORGE (ours)} & \checkmark & \checkmark & \checkmark (DP) \\
+\bottomrule
+\end{tabular}
+\caption{Positioning of FU methods against the three cost axes: ``No hist.'' = no per-round history storage; ``No coop.'' = no client cooperation at request time; ``Formal guar.'' = explicit $(\varepsilon,\delta)$ bound to the retrain counterfactual.}
+\label{tab:positioning}
+\end{table}
+
+\paragraph{Paper organization.}
+The rest of the paper is structured as follows. Section~\ref{sec:related} discusses
+related work. Section~\ref{sec:prelim} introduces the system model, the threat model,
+the forward-forgetting definition, and the problem statement. Section~\ref{sec:method}
+describes the FORGE protocol and its two algorithms. Section~\ref{sec:theory} states and
+proves the three main theoretical results. Sections~\ref{sec:experiments},
+\ref{sec:results}, and \ref{sec:results-femnist} describe the experimental setup and
+report results on Split-CIFAR-10 and FEMNIST, respectively. Section~\ref{sec:discussion}
+interprets the main findings. Section~\ref{sec:limitations} summarises the scope of the
+evaluation. Finally, Section~\ref{sec:conclusion} concludes the paper and presents
+future research directions.

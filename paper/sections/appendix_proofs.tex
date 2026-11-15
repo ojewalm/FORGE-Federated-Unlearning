@@ -1,0 +1,106 @@
+\section{Full proofs}
+\label{app:proofs}
+
+\subsection{Proof of Theorem~\ref{thm:forward-forgetting}}
+\label{app:proof-thm-ff}
+
+Let $D$ and $D' = D \setminus \{D_{i^\star}\}$ be neighbouring datasets differing in
+client $i^\star$'s data, and let
+$\Theta^{(r_{\mathrm{req}})}_\mathrm{sh}(D)$ denote the feature-block output of
+Algorithm~\ref{alg:decayed-aggregation} after $r_{\mathrm{req}}$ rounds on $D$.
+
+\paragraph{Linear form of the aggregation state.}
+From~\eqref{eq:feature-update},
+$\theta^{(r_{\mathrm{req}})}_\mathrm{sh}
+ = \theta^{(0)}_\mathrm{sh}
+ + \eta_g \sum_{t=0}^{r_{\mathrm{req}}-1} \tilde\Delta^{(t+1)}_\mathrm{sh}
+ + \eta_g \sum_{t=0}^{r_{\mathrm{req}}-1} \xi^{(t)}$,
+where the second term is deterministic given the client updates and the third is a
+sum of independent Gaussian variates with total covariance
+$r_{\mathrm{req}} \eta_g^2 \sigma^2 I$.
+
+\paragraph{Sensitivity to removing $i^\star$.}
+Unrolling the EMA~\eqref{eq:decay-state} gives
+$\tilde\Delta^{(t+1)}_\mathrm{sh} = (1-\alpha) \sum_{s=0}^{t} \alpha^{t-s}\,
+\bar\Delta^{(s)}_\mathrm{sh}$, where each $\bar\Delta^{(s)}_\mathrm{sh}$ changes
+in L2 by at most $C/|S^{(s)}|$ when $i^\star \in S^{(s)}$. Summing and bounding the
+geometric series by $1/(1-\alpha)$, with $S \subseteq [0, r_\forget]$ and
+$r_\mathrm{req} - s \ge T$ for all $s \in S$, yields
+$\|\Delta_{i^\star}\|_2 \le \eta_g C \alpha^T$ under the participation bound
+$|S| \le \rho r_\forget$.
+
+\paragraph{Gaussian mechanism on the final release.}
+The final state is a deterministic function of the data plus independent Gaussian
+noise with per-coordinate standard deviation $\tau = \sqrt{r_{\mathrm{req}}} \eta_g
+\sigma$. The analytic Gaussian mechanism (Theorem~A.1 of \cite{dwork2014book})
+gives, for sensitivity $\|\Delta_{i^\star}\|_2$,
+$\varepsilon_1(T) \le \|\Delta_{i^\star}\|_2 \sqrt{2\ln(1.25/\delta)} / \tau
+= C \alpha^T \sqrt{2\ln(1.25/\delta)} / (\sigma \sqrt{r_\mathrm{req}})$, matching
+Eq.~\eqref{eq:eps-rate}. \qed
+
+\begin{remark}[Trajectory release]
+The bound above applies to the released post-erasure state. For an adversary that
+observes every intermediate round broadcast, Appendix~\ref{app:rdp} gives a
+R\'enyi-DP accounting that retains the $\alpha^T$ decay and adds a $\sqrt{r_\mathrm{req}}$
+trajectory factor.
+\end{remark}
+
+\subsection{Proof of Lemma~\ref{lem:subtraction}}
+\label{app:proof-lem-sub}
+
+Fix the training trajectory and $\theta_\mathrm{cl}$ at erasure time. Under
+Algorithm~\ref{alg:decayed-aggregation}, $\theta_\mathrm{cl}$ is deterministic
+given the sequence of client gradients and does not depend on any client summary.
+The release $\sigma_{i^\star} = \mathrm{SS}(D_{i^\star}) + \eta_\summary$ is
+$(\varepsilon_\summary, \delta_\summary)$-DP against $D_{i^\star}$ by construction
+of the Gaussian mechanism. The erasure map $\mathcal{E}(\theta, \cdot)$ is a
+deterministic post-processing of $\sigma_{i^\star}$, so by DP post-processing
+(Proposition~2.1 of \cite{dwork2014book}),
+$\theta'_\mathrm{cl} \indist[(\varepsilon_\summary, \delta_\summary)]
+\theta'_\mathrm{cl, -i^\star}$. \qed
+
+\subsection{Non-convex trajectory argument}
+\label{app:nonconvex}
+
+The sensitivity argument of Theorem~\ref{thm:forward-forgetting} uses only the
+linear EMA structure. The non-linear dependence of local-training outputs
+$\Delta_i^{(t)}$ on $\theta^{(t)}$ can be handled with a trajectory-Lipschitz
+contraction following \cite{gupta2021adaptive}: under bounded local updates
+(Assumption~\ref{ass:clipping}) and Lipschitz continuity of the local-training map
+in its input state, the state deviation $\|\theta^{(t+1)}(D) - \theta^{(t+1)}(D')\|_2$
+contracts geometrically whenever $\eta_g (1-\alpha) \eta_l L' < 1$, where $L'$ is
+the per-round Lipschitz constant of the local-training map. This replaces $C$ by a
+trajectory-adjusted constant $C'$ depending on $\eta_l, L', \alpha$; the $\alpha^T$
+dependence is preserved.
+
+\paragraph{Empirical $L'$ at ResNet-18 scale.}
+We measured $L'$ directly on the paper's CIFAR-10 operating point. Taking the final
+global state $\theta^{(200)}$ as the probe origin, we drew $4$ random unit
+directions $v$ (restricted to trainable parameters, i.e., excluding BatchNorm
+running statistics) and, for each of $8$ randomly sampled clients, ran local
+training (3 epochs, batch 32, lr 0.02) from $\theta^{(200)}$ and from
+$\theta^{(200)} + \varepsilon v$ ($\varepsilon = 10^{-3}$) with identical data
+shuffling. The estimate $\hat L' = \| \mathrm{LocalTrain}(\theta^{(200)} + \varepsilon v) - \mathrm{LocalTrain}(\theta^{(200)}) \|_2 / \varepsilon$
+across $32$ (client, direction) pairs gave
+median $8.0$, mean $22.9$, p95 $87.0$, max $88.3$. All $32$ measurements fall
+below the contraction threshold $L' < 100$ implied by the paper's hyperparameters
+($\eta_g = 1$, $\alpha = 0.5$, $\eta_l = 0.02$), so the one-round contraction
+factor $\eta_g (1-\alpha) \eta_l L'$ is at most $0.883$ at the operating point.
+This gives an explicit numeric for the trajectory-adjusted constant: $C' \le C /
+(1 - 0.883) \approx 8.5\,C$ in the worst case over our probe. The $\alpha^T$
+decay dominates this correction factor for any $T \gtrsim 20$, so the
+operating-point numerics in Theorem~\ref{thm:composition} are unaffected to within
+a $9\times$ constant. The probe script is released with the code artefact.
+
+\subsection{R\'enyi-DP tightening for full-trajectory release}
+\label{app:rdp}
+
+Under the full-trajectory release model, the per-round Gaussian mechanism on
+$\tilde\Delta^{(t+1)}$ has sensitivity $\mathrm{sens}_t = \eta_g (1-\alpha) C
+\alpha^{r_\mathrm{req}-t-1}$ and induces a per-round R\'enyi-DP guarantee of order
+$\lambda$ equal to $\lambda\, \mathrm{sens}_t^2 / (2\sigma^2)$
+\cite{mironov2017renyi}. Summing over $t \in S$ and converting to $(\varepsilon,
+\delta)$-DP via the standard RDP conversion gives, for $|S| \le \rho r_\mathrm{req}$,
+$\varepsilon \le \eta_g (1-\alpha) C \alpha^T \sqrt{2 \rho r_\mathrm{req} \ln(1/\delta)}
+/ (\sigma \sqrt{1 - \alpha^2})$. The $\alpha^T$ decay is preserved; the trajectory
+length contributes a $\sqrt{r_\mathrm{req}}$ factor.

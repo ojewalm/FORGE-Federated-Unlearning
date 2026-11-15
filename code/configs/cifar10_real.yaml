@@ -1,0 +1,78 @@
+# CIFAR-10 at the same training scale as cifar100_real.yaml. 10 classes is
+# much easier than 100, so 200 rounds of ResNet-18 on 100 clients should
+# reach meaningful accuracy (expect ~30-50% depending on non-IID).
+experiment:
+  name: cifar10_real
+  seed: 0
+  device: auto
+  data_root: ./data
+
+dataset:
+  name: cifar10
+  num_clients: 100
+  num_tasks: 5             # 5 tasks × 2 classes each
+  dirichlet_alpha: 0.5
+
+model:
+  name: resnet18
+  in_channels: 3
+  small_input: true
+
+federated:
+  total_rounds: 200
+  rounds_per_task: 40
+  client_sample_frac: 0.20   # 20 clients/round (10% was too sparse)
+  local_epochs: 3
+  batch_size: 32
+  lr: 0.02
+  # Measured delta L2 for ResNet-18 after 3 local epochs on CIFAR-10 is
+  # in the 10-60 range. clip=50 preserves most signal with a finite
+  # sensitivity for the DP analysis of ours.
+  clip_norm: 50.0
+
+aggregator:
+  # alpha=0.5 keeps the decay property (needed for forward-forgetting
+  # guarantee) but with a short enough time constant (2 rounds) to track
+  # the task-incremental shifts. Only applies to ours (train.py);
+  # retrain.py and shared base use vanilla FedAvg.
+  alpha: 0.5
+  server_lr: 1.0
+  server_sigma: 0.001
+
+summary:
+  enabled: true
+  type: moments
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.10
+    delta_1: 1.0e-5
+
+baselines:
+  halimi_ascent_steps: 50
+  halimi_ascent_lr: 0.005
+  halimi_radius: 3.0
+  fedmemprune_quantile: 0.95
+  fedmemprune_reset_scale: 0.0
+  fedmemprune_include_head: true
+  fedrecovery_weighting: linear
+  fedrecovery_eta: 1.0
+  fedrecovery_eps: 1.0
+  fedrecovery_delta: 1.0e-5
+  federaser_lr_calib: 0.5
+  sifu_target_eps: 1.0
+  participation_rho: 0.10
+  history_stride: 5
+
+evaluation:
+  evaluate_every: 10
+  checkpoint_every: 1
+
+output:
+  checkpoint_dir: ./runs/cifar10_real

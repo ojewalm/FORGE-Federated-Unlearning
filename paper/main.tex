@@ -1,0 +1,146 @@
+\documentclass[sigconf,anonymous,review]{acmart}
+\usepackage{popets}
+
+\setcopyright{popets}
+\copyrightyear{2027}
+
+\acmYear{2027}
+\acmVolume{2027}
+\acmNumber{X}
+\acmDOI{XXXXXXX.XXXXXXX}
+\acmISBN{}
+\acmConference{Proceedings on Privacy Enhancing Technologies}
+\settopmatter{printacmref=false,printccs=false,printfolios=true}
+
+% --- Math and algorithm support (acmart already loads amsmath, amssymb, etc.) ---
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc}
+
+% --- Theorem environments ---
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% --- Notation macros (from IEEEtran version) ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\model}{\theta}
+\newcommand{\summary}{\sigma}
+\newcommand{\clip}{\mathrm{clip}}
+\newcommand{\indist}{\stackrel{(\eps,\delta)}{\approx}}
+\newcommand{\clientset}{\mathcal{C}}
+\newcommand{\forget}{i^{\star}}
+
+\begin{document}
+
+\title[FORGE: FCL with Formal Guarantees]{FORGE: A Protocol for Federated Continual Unlearning with Formal Guarantees}
+
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymised for review}
+  \city{Anonymised}
+  \country{Anonymised}}
+\email{anonymised@example.com}
+
+\renewcommand{\shortauthors}{Anonymous}
+
+\input{sections/abstract}
+
+\keywords{federated learning, machine unlearning, differential privacy, right to erasure, GDPR}
+
+\maketitle
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/preliminaries}
+\input{sections/method}
+\input{sections/theory}
+\input{sections/experiments}
+\input{sections/results}
+\input{sections/results_femnist}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/conclusion}
+
+\begin{acks}
+Omitted for anonymous review.
+\end{acks}
+
+\begin{ethics}
+This work studies client-level unlearning in federated continual learning on
+public image and text benchmarks (Split-CIFAR-10, Split-CIFAR-100, FEMNIST),
+simulating client participation and departure via Dirichlet partitioning. No
+human subjects or personally identifiable data were collected or processed. The
+LEAF/FEMNIST writer identifiers are already pseudonymised in the published
+dataset. The work was not submitted to an external ethics panel; the authors are
+not aware of any ethical risk that would require such review. The target
+deployment context (data-controller erasure obligations under EDPB Opinion
+28/2024) is cited as the motivating setting, not as a studied application.
+\end{ethics}
+
+\begin{openscience}
+The authors plan to release all research artefacts upon acceptance under a
+permissive open-source licence. The release will include:
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+  \item the full implementation of FORGE's training loop, pre-committed summary
+  channel, non-interactive erasure procedure, and verification protocol;
+  \item reimplementations of all five baselines (Halimi et al., FedMemPrune,
+  FedRecovery, FedEraser, SIFU) in a common evaluation framework;
+  \item configuration files reproducing every benchmark reported in this paper
+  (Split-CIFAR-10 three-seed, Split-CIFAR-100 seed~0, FEMNIST seed~0, near-IID,
+  replay-enabled, within-aggregator, ablation);
+  \item attack implementations (Yeom threshold MIA, shared-shadow LiRA, FUIA
+  gradient inversion) at the budgets reported;
+  \item the orchestration scripts that produce each table from a single command,
+  with deterministic resume across interruptions on consumer hardware.
+\end{itemize}
+For anonymous review, the artefacts are hosted on
+\url{https://anonymous.4open.science/} (link available on request to the chairs
+to preserve blind-review guarantees of the hosting service).
+\end{openscience}
+
+\begin{ai}
+The authors used generative AI-based tools (Anthropic Claude Code) to assist
+with (a) the implementation of baseline reimplementations and orchestration
+scripts, (b) revisions to prose for conciseness and conformance to the
+PoPETs~2027 formatting requirements. The attack implementations (Yeom
+threshold MIA, shared-shadow LiRA, FUIA) and the FORGE training and erasure
+code were cross-checked against the published algorithm descriptions and, where
+public reference code was available, against those implementations as detailed
+in Appendix~\ref{app:baseline-attribution}. All experimental design, theoretical
+arguments, formal proofs, numerical results, and interpretation are the
+authors' own. The authors have manually verified and are responsible for the
+accuracy, originality, and integrity of the output of all AI-based tools.
+\end{ai}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix_proofs}
+\input{sections/appendix_numerical}
+\input{sections/appendix_inverted_lira}
+\input{sections/appendix_cifar10_full}
+\input{sections/appendix_iid}
+\input{sections/appendix_cifar100}
+\input{sections/appendix_cifar100_noniid}
+\input{sections/appendix_ablation_noniid}
+\input{sections/appendix_fewclients}
+\input{sections/appendix_baselines}
+
+\end{document}

@@ -1,0 +1,74 @@
+# CPU smoke config. Tiny 2-conv CNN, 10 clients, 3 tasks, 15 rounds.
+# Not for benchmark reporting — this validates the pipeline end-to-end.
+experiment:
+  name: cifar100_smoke
+  seed: 0
+  device: auto        # picks mps on M-series, cuda if NVIDIA, else cpu
+  data_root: ./data
+
+dataset:
+  name: cifar100
+  num_clients: 10
+  num_tasks: 3
+  dirichlet_alpha: 0.5
+
+model:
+  name: tiny_cnn
+  in_channels: 3
+  input_size: 32
+
+federated:
+  total_rounds: 15
+  rounds_per_task: 5
+  client_sample_frac: 0.3
+  local_epochs: 1
+  batch_size: 64
+  lr: 0.02
+  clip_norm: 1.0
+
+aggregator:
+  alpha: 0.9
+  server_lr: 1.0
+  server_sigma: 0.05
+
+summary:
+  enabled: true
+  type: moments
+  frequency: 5
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.3
+    delta_1: 1.0e-5
+
+baselines:
+  # Halimi (arXiv 2207.05521)
+  halimi_ascent_steps: 30
+  halimi_ascent_lr: 0.005
+  halimi_radius: 3.0
+  # FedMemPrune (Wei et al. KDD 2026)
+  fedmemprune_quantile: 0.95
+  fedmemprune_reset_scale: 0.0
+  fedmemprune_include_head: true
+  # FedRecovery (Zhang et al. TIFS 2023)
+  fedrecovery_weighting: linear
+  fedrecovery_eta: 1.0
+  fedrecovery_eps: 1.0
+  fedrecovery_delta: 1.0e-5
+  # FedEraser (Liu et al. IWQoS 2021)
+  federaser_lr_calib: 0.5
+  # SIFU (Fraboni et al. AISTATS 2024)
+  sifu_target_eps: 1.0
+  participation_rho: 0.3
+
+evaluation:
+  evaluate_every: 5
+  checkpoint_every: 1     # write resume.pt every round
+
+output:
+  checkpoint_dir: ./runs/cifar100_smoke

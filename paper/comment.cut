@@ -1,0 +1,11 @@
+The authors used generative AI-based tools (Anthropic Claude Code) to assist
+with (a) the implementation of baseline reimplementations and orchestration
+scripts, (b) revisions to prose for conciseness and conformance to the
+PoPETs~2027 formatting requirements. The attack implementations (Yeom
+threshold MIA, shared-shadow LiRA, FUIA) and the FORGE training and erasure
+code were cross-checked against the published algorithm descriptions and, where
+public reference code was available, against those implementations as detailed
+in Appendix~\ref{app:baseline-attribution}. All experimental design, theoretical
+arguments, formal proofs, numerical results, and interpretation are the
+authors' own. The authors have manually verified and are responsible for the
+accuracy, originality, and integrity of the output of all AI-based tools.

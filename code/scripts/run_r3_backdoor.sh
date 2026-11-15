@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# R3: adversarial-departure experiment.
+# Client 3 injects a 4x4 trigger-patch backdoor during its last 20 rounds of
+# training; FORGE erasure is applied; backdoor attack success rate (ASR) is
+# measured on the pre- and post-erasure models.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+LOGDIR="runs/_remaining"
+mkdir -p "$LOGDIR"
+log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOGDIR/orchestrator.log"; }
+
+log "=== R3 backdoor experiment starting ==="
+
+# 1. Train FORGE with backdoor on client 3.
+log "[R3] training FORGE with backdoor injection on client 3 (last 20 rounds)"
+python3 scripts/train.py --config configs/cifar10_iid_backdoor.yaml 2>&1 | tee "$LOGDIR/r3_v3_train.log"
+
+# 2. Unlearn client 3 via FORGE.
+log "[R3] running FORGE non-interactive erasure for client 3"
+python3 scripts/unlearn.py --config configs/cifar10_iid_backdoor.yaml \
+    --checkpoint runs/cifar10_iid_backdoor/final.pt --client 3 \
+    --r-forget 66 --r-request 200 \
+    --output runs/cifar10_iid_backdoor/final_unlearned_c3.pt 2>&1 | tee "$LOGDIR/r3_v3_unlearn.log"
+
+# 3. Evaluate backdoor ASR before and after erasure.
+log "[R3] evaluating backdoor ASR"
+python3 scripts/eval_backdoor.py --config configs/cifar10_iid_backdoor.yaml \
+    --forget-client 3 2>&1 | tee "$LOGDIR/r3_v3_asr.log"
+
+log "=== R3 done ==="

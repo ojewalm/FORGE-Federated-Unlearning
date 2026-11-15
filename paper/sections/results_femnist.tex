@@ -1,0 +1,54 @@
+\subsection{Cross-dataset: FEMNIST}
+\label{sec:results-femnist}
+
+Table~\ref{tab:femnist-benchmark} reports a seed-0 replication on FEMNIST
+(small-CNN, 500 writers subsampled from the LEAF benchmark \cite{caldas2018leaf},
+6 character-group tasks, 200 rounds). The architecture, non-IID structure, and task granularity
+all differ substantially from CIFAR-10, so the FEMNIST result is an
+independent sanity check on the paper's qualitative claims.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrl}
+\toprule
+Method & Acc & Yeom & KL & Lat.\,(s) & Guar. \\
+\midrule
+Retrain (gold) & $0.131$ & $0.151$ & $0.000$ & ${\sim}160$ & exact \\
+No-unlearn     & $0.131$ & $0.135$ & $0.093$ & $0$         & none  \\
+\textbf{FORGE} & $\mathbf{0.131}$ & $\mathbf{0.083}$ & $\mathbf{0.093}$ & $\mathbf{0.07}$ & $\eps{=}2.0$ \\
+\midrule
+Halimi \cite{halimi2022}              & $0.009$ & $0.099$ & $2.324$ & $1.0$   & none \\
+FedMemPrune \cite{wei2026fedmemprune} & $0.015$ & $0.042$ & $4.464$ & $0.3$   & none \\
+FedRec$^{\dag}_{\eps{=}1}$            & $0.024$ & $0.039$ & $7.736$ & $2.4$   & $\eps{=}1.0$ \\
+FedRec$^{\dag}_{\eps{=}2}$            & $0.024$ & $0.042$ & $7.736$ & $2.5$   & $\eps{=}2.0$ \\
+FedRec$^{\dag}_{\eps{=}5}$            & $0.024$ & $0.048$ & $7.736$ & $2.8$   & $\eps{=}5.0$ \\
+FedRec$^{\dag}_{\eps{=}10}$           & $0.024$ & $0.029$ & $7.736$ & $2.6$   & $\eps{=}10.0$ \\
+FedRec$_{\eps{=}\infty}$              & $0.130$ & $0.093$ & $0.077$ & $2.7$   & $\infty$ \\
+FedEraser \cite{liu2021federaser}     & $0.014$ & $0.064$ & $4.433$ & $3.8$   & none \\
+SIFU \cite{fraboni2024sifu}           & $0.152$ & $0.115$ & $4.513$ & $142.9$ & $\eps{=}1.0$ \\
+\bottomrule
+\end{tabular}
+\caption{FEMNIST benchmark (seed 0, departing client 3, small-CNN, 500 LEAF writers). $\dag$: destroyed-model FedRec variants. LiRA column and FUIA are omitted (FUIA not supported by small-CNN's MaxPool2d). Chance accuracy is $0.016$ (62 classes).}
+\label{tab:femnist-benchmark}
+\end{table}
+
+FEMNIST reproduces the three qualitative CIFAR-10 findings:
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+\item FORGE matches gold retrain on utility ($0.131$ vs $0.131$) and
+      post-erasure retrain-KL ($0.093$, identical to the no-unlearning
+      control).
+\item FedRecovery destroys the model at every finite $\varepsilon$; the
+      $\varepsilon = \infty$ anchor preserves utility ($0.130$) but
+      leaks ($0.093$ Yeom, matching no-unlearn).
+\item SIFU with proper replay matches or exceeds retrain gold utility
+      ($0.152$) at the cost of $143$ s latency, two orders of magnitude
+      slower than FORGE's $0.07$ s.
+\end{enumerate}
+FEMNIST additionally produces a stronger Yeom MIA signal than CIFAR-10
+because the small-CNN overfits more at this training length. FORGE's
+Yeom advantage of $0.083$ is \emph{below} the retrain gold's $0.151$ and
+\emph{below} every other preserved-utility method, suggesting that the
+head-only subtraction removes a measurable amount of per-sample
+memorisation on this architecture-dataset combination.

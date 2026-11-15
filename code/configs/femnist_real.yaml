@@ -1,0 +1,69 @@
+# FEMNIST at the same protocol as cifar10_real.yaml, adapted for 62 classes
+# and natural (writer-based) non-IID partitioning. Subsamples writers to 500
+# for M4 tractability. Expected wall-clock on M4 similar to CIFAR-10
+# (~6h for the full 3-seed chain, SIFU proper replay dominates).
+experiment:
+  name: femnist_real
+  seed: 0
+  device: auto
+  data_root: ./data
+
+dataset:
+  name: femnist
+  num_clients: 500            # subsample writers for tractability
+
+model:
+  name: small_cnn
+  in_channels: 1
+
+federated:
+  total_rounds: 200
+  rounds_per_task: 40          # 5 class-groups
+  client_sample_frac: 0.05     # 25 clients per round
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.02
+  clip_norm: 10.0              # small_cnn has smaller delta L2 than ResNet-18
+
+aggregator:
+  alpha: 0.5
+  server_lr: 1.0
+  server_sigma: 0.001
+
+summary:
+  enabled: true
+  type: moments
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.05
+    delta_1: 1.0e-5
+
+baselines:
+  halimi_ascent_steps: 50
+  halimi_ascent_lr: 0.005
+  halimi_radius: 3.0
+  fedmemprune_quantile: 0.95
+  fedmemprune_reset_scale: 0.0
+  fedmemprune_include_head: true
+  fedrecovery_weighting: linear
+  fedrecovery_eta: 1.0
+  fedrecovery_eps: 1.0
+  fedrecovery_delta: 1.0e-5
+  federaser_lr_calib: 0.5
+  sifu_target_eps: 1.0
+  participation_rho: 0.05
+  history_stride: 5
+
+evaluation:
+  evaluate_every: 10
+  checkpoint_every: 1
+
+output:
+  checkpoint_dir: ./runs/femnist_real

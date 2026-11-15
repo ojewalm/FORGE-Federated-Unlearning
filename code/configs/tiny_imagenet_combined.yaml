@@ -1,0 +1,51 @@
+experiment:
+  name: tiny_imagenet_combined
+  seed: 0
+  device: cuda
+  data_root: ./data
+
+dataset:
+  name: tiny_imagenet
+  num_clients: 100
+  num_tasks: 20
+  dirichlet_alpha: 0.5
+
+model:
+  name: resnet18
+  in_channels: 3
+  small_input: false
+
+federated:
+  total_rounds: 500
+  rounds_per_task: 25
+  client_sample_frac: 0.1
+  local_epochs: 2
+  batch_size: 32
+  lr: 0.01
+  clip_norm: 1.0
+
+aggregator:
+  alpha: 0.9
+  server_lr: 1.0
+  server_sigma: 0.5
+
+summary:
+  enabled: true
+  type: logits
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.1
+    delta_1: 1.0e-5
+
+evaluation:
+  evaluate_every: 25
+
+output:
+  checkpoint_dir: ./runs/tiny_imagenet_combined

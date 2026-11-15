@@ -1,0 +1,65 @@
+\section{Full CIFAR-10 benchmark with CIs and LiRA}
+\label{app:cifar10-full}
+
+Table~\ref{tab:cifar10-full} is the uncompacted version of the class-incremental
+stress test in Table~\ref{tab:cifar10-ci-baselines}: mean $\pm$ 95\%
+Student's-$t$ CI ($n{=}3$ seeds) per cell, with the LiRA AUROC column added. The LiRA cell is the three-seed mean
+with $n_\mathrm{shadow}{=}32$ at seed~0 and $n_\mathrm{shadow}{=}8$ at seeds~1--2;
+Table~\ref{tab:lira-ref} reports the Carlini et al.\ reference-budget
+$n_\mathrm{shadow}{=}128$ LiRA at seed~0.
+
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrr}
+\toprule
+Method & AUROC & Advantage & TPR@1\% \\
+\midrule
+Retrain (gold)                       & $0.5226$ & $0.045$ & $0.010$ \\
+No-unlearn                           & $0.5292$ & $0.059$ & $0.042$ \\
+\textbf{FORGE}                       & $\mathbf{0.5229}$ & $\mathbf{0.046}$ & $\mathbf{0.037}$ \\
+Halimi \cite{halimi2022}             & $0.5197$ & $0.040$ & $0.021$ \\
+FedMemPrune \cite{wei2026fedmemprune}& $0.5133$ & $0.027$ & $0.008$ \\
+FedRec$^{\dag}_{\eps{=}1}$           & $0.0056$ & $0.989$ (inv.) & $0.002$ \\
+FedRec$^{\dag}_{\eps{=}2}$           & $0.2598$ & $0.480$ (inv.) & $0.006$ \\
+FedRec$^{\dag}_{\eps{=}5}$           & $0.4296$ & $0.141$ & $0.015$ \\
+FedRec$^{\dag}_{\eps{=}10}$          & $0.4564$ & $0.087$ & $0.027$ \\
+FedRec$_{\eps{=}\infty}$             & $0.5191$ & $0.038$ & $0.021$ \\
+FedEraser \cite{liu2021federaser}    & $0.5146$ & $0.029$ & $0.014$ \\
+SIFU \cite{fraboni2024sifu}          & $0.5210$ & $0.042$ & $0.008$ \\
+\bottomrule
+\end{tabular}
+\caption{LiRA at the Carlini et al.\ reference budget $n_\mathrm{shadow}{=}128$,
+seed~0, departing client~3. FORGE's $0.5229$ AUROC is within $0.0003$ of the
+retrain gold ($0.5226$). ``inv.'' = inverted-LiRA artefact on destroyed-model
+baselines. $\dag$: destroyed-model.}
+\label{tab:lira-ref}
+\end{table}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrll}
+\toprule
+Method & Acc.\ & MIA$_{\mathrm{Yeom}}$ & MIA$_{\mathrm{LiRA}}$ (AUROC) & KL(post\,$\|$\,retrain) & Latency (s) & Guar. \\
+\midrule
+Retrain (gold)                             & $0.177 \pm 0.070$ & $0.015 \pm 0.141$ & $0.490 \pm 0.121$ & $0.000$                 & $\sim 2700$              & exact \\
+No-unlearn                                 & $0.173 \pm 0.050$ & $0.017 \pm 0.078$ & $0.498 \pm 0.139$ & $0.073 \pm 0.184$       & $0$                      & none  \\
+\textbf{FORGE}                             & $\mathbf{0.174 \pm 0.055}$ & $\mathbf{0.015 \pm 0.068}$ & $0.492 \pm 0.137$ & $\mathbf{0.070 \pm 0.140}$ & $\mathbf{0.31 \pm 0.03}$ & $\eps{=}2.0$ \\
+\midrule
+Halimi \cite{halimi2022}                   & $0.144 \pm 0.291$ & $0.121 \pm 0.723$ & $0.483 \pm 0.255$ & $0.439 \pm 3.144$ & $7.2 \pm 0.6$   & none \\
+FedMemPrune \cite{wei2026fedmemprune}      & $0.095 \pm 0.041$ & $0.074 \pm 0.622$ & $0.502 \pm 0.140$ & $5.54 \pm 5.81$   & $1.5 \pm 0.3$   & none \\
+FedRec$^{\dag}_{\eps{=}1}$                 & $0.100 \pm 0.000$ & $0.000 \pm 0.000$ & inv.              & \textsc{NaN}      & $17.9 \pm 2.0$  & $\eps{=}1.0$ \\
+FedRec$^{\dag}_{\eps{=}2}$                 & $0.096 \pm 0.113$ & $0.000 \pm 0.000$ & inv.              & \textsc{NaN}      & $16.7 \pm 0.8$  & $\eps{=}2.0$ \\
+FedRec$^{\dag}_{\eps{=}5}$                 & $0.100 \pm 0.002$ & $0.050 \pm 0.313$ & $0.452 \pm 0.353$ & $9.78 \pm 5.33$   & $17.1 \pm 1.2$  & $\eps{=}5.0$ \\
+FedRec$^{\dag}_{\eps{=}10}$                & $0.102 \pm 0.033$ & $0.000 \pm 0.000$ & $0.484 \pm 0.321$ & \textsc{NaN}      & $18.1 \pm 2.5$  & $\eps{=}10.0$ \\
+FedRec$_{\eps{=}\infty}$                   & $0.168 \pm 0.043$ & $\mathbf{0.115 \pm 0.802}$ & $0.490 \pm 0.110$ & $0.170 \pm 0.793$ & $16.4 \pm 0.5$ & $\infty$ \\
+FedEraser \cite{liu2021federaser}          & $0.100 \pm 0.001$ & $0.123 \pm 0.722$ & $0.486 \pm 0.133$ & $1.31 \pm 2.49$   & $23.9 \pm 2.0$  & none \\
+SIFU \cite{fraboni2024sifu}                & $0.175 \pm 0.067$ & $0.029 \pm 0.184$ & $0.493 \pm 0.115$ & $0.098 \pm 0.095$ & $3419 \pm 2528^{\star}$ & $\eps{=}1.0$ \\
+\bottomrule
+\end{tabular}
+\caption{CIFAR-10 benchmark with CIs and LiRA (mean $\pm$ 95\% Student's-$t$ CI). ``inv.'' = inverted-LiRA artefact (see Appendix~\ref{app:inverted-lira}). $\dag$: destroyed-model. $\star$: SIFU wall-clock on M4 with sleep cycles (stable-M4 is $2130 \pm 86$~s).}
+\label{tab:cifar10-full}
+\end{table*}

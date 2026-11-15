@@ -1,0 +1,27 @@
+\section{Conclusion and future work}
+\label{sec:conclusion}
+
+FORGE is a federated unlearning protocol that keeps no history, needs no
+cooperation from the departing client at request time, and carries an auditable
+privacy guarantee. The job is split across two channels. A decayed aggregation
+fades each client's contribution to the shared feature extractor on its own,
+and each client pre-commits a tiny noisy summary that the server uses once, at
+erasure time, to apply one bounded step on the classifier head. Because the two
+channels use independent noise they compose under Gaussian differential privacy,
+and the certificate can be audited against the client's commitment without
+exposing the pre-erasure model.
+
+Across CIFAR-10, CIFAR-100, and FEMNIST, FORGE matches full retraining in
+accuracy and membership-inference resistance, processes each erasure in under a
+second (five orders of magnitude faster than SIFU with proper replay), and uses
+$O(1)$ per-client storage.
+
+Three threads remain open: a trajectory-level R\'enyi-DP accounting for short
+cooling-off periods, a direction-aware non-convex analysis at larger model
+scales, and an adversarial-departure demonstration outside the
+catastrophic-forgetting regime.
+
+\paragraph{Reproducibility.}
+Code and configurations are released with the submission. Every benchmark runs
+from a single command, is deterministic given a fixed seed, and supports
+interruption and resume on consumer hardware.

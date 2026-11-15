@@ -1,0 +1,52 @@
+experiment:
+  name: newsgroups20_combined
+  seed: 0
+  device: cuda
+  data_root: ./data
+
+dataset:
+  name: newsgroups20
+  num_clients: 100
+  num_tasks: 4
+  dirichlet_alpha: 0.3
+  tokenizer_name: distilbert-base-uncased
+  max_len: 128
+
+model:
+  name: text_transformer
+  model_name: distilbert-base-uncased
+
+federated:
+  total_rounds: 200
+  rounds_per_task: 50
+  client_sample_frac: 0.1
+  local_epochs: 1
+  batch_size: 16
+  lr: 5.0e-5
+  clip_norm: 1.0
+
+aggregator:
+  alpha: 0.9
+  server_lr: 1.0
+  server_sigma: 0.05
+
+summary:
+  enabled: true
+  type: logits
+  frequency: 20
+  eps: 2.0
+  delta: 1.0e-5
+
+unlearning:
+  head_only: true
+  ascent_step: 0.1
+  projection_radius: 0.5
+  forward_forgetting:
+    rho: 0.1
+    delta_1: 1.0e-5
+
+evaluation:
+  evaluate_every: 25
+
+output:
+  checkpoint_dir: ./runs/newsgroups20_combined
